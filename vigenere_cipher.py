@@ -1,15 +1,18 @@
 class PHPGoAway(object):
     
-    def __init__(self, message):
-        if message != "Python Buddy":
-            raise Exception("That's not the secret handshake.")
-        self.key = None
-        self.factor = 97 # 'a' = 97 in ascii, use to make letters 0 indexed
-        self.letters = "abcdefghijklmnopqrstuvwxyz"
-        self.letters_as_numbers = list(range(len(self.letters)))
-        self.vigenere_table = self.__generate_vigenere_table(self.letters_as_numbers)
+    def __init__(self, alphabet=None):
+        self.key = ""
+        if alphabet is None:
+            lowercase = "abcdefghijklmnopqrstuvwxyz"
+            uppercase = lowercase.upper()
+            punctuation = ".,?;:'`~!@#$%^&*()-+_=[]{}/\| "
+            self.alphabet = lowercase + uppercase + punctuation
+        else:
+            self.alphabet = alphabet
+        self.vigenere_table = self.__generate_vigenere_table(self.alphabet)
 
-    def __generate_vigenere_table(self, letters_as_numbers):
+    def __generate_vigenere_table(self, alphabet):
+        letters_as_numbers = list(range(len(alphabet)))
         table = dict()
         for i in range(len(letters_as_numbers)):
             table[i] = letters_as_numbers[i:]
@@ -36,47 +39,21 @@ class PHPGoAway(object):
     def __get_rotating_key(self, message):
         if not self.key:
             raise Exception("Set the key first, dummy!  Do you want everyone to read this?")
-        key_index = 0
         rotating_key = str()
-        for char in message:
-            if char == " ":
-                rotating_key += " "
-            else:
-                rotating_key += self.key[key_index]
-                key_index += 1
-                if key_index == len(self.key):
-                    key_index = 0
+        for i in range(len(message)):
+            rotating_key += self.key[i % len(self.key)]
         return rotating_key
     
     def __encrypt_char(self, msg_char, key_char):
-        if msg_char == " ":
-            return " "
-        msg_int = ord(msg_char) - self.factor
-        key_int = ord(key_char) - self.factor
+        msg_int = self.alphabet.find(msg_char)
+        key_int = self.alphabet.find(key_char)
         encrypt_int = self.vigenere_table[key_int][msg_int]
-        return self.letters[encrypt_int]
+        return self.alphabet[encrypt_int]
     
     def __decrypt_char(self, encrypt_char, key_char):
-        if encrypt_char == " ":
-            return " "
-        encrypt_int = ord(encrypt_char) - self.factor
-        key_int = ord(key_char) - self.factor
+        encrypt_int = self.alphabet.find(encrypt_char)
+        key_int = self.alphabet.find(key_char)
         row = self.vigenere_table[key_int]
         for i in range(len(row)):
             if row[i] == encrypt_int:
-                return self.letters[i]
-
-secret = PHPGoAway("Python Buddy")
-secret.setKey("lemon")
-ciphertext = secret.forLove("attack at dawn")
-print(ciphertext)
-
-mit = PHPGoAway("Python Buddy")
-mit.setKey("yophp")
-print(mit.forLove("i love you"))
-print(mit.fromLove("rvt mtczxuvq ogl bshjha"))
-
-fei = PHPGoAway("Python Buddy")
-fei.setKey("panda")
-print(fei.fromLove("xt vv bttghr io ohg uoe ioggvyecefv twaa wo psx iog prumxsfloc"))
-print(fei.forLove("i wonder who said that first"))
+                return self.alphabet[i]
