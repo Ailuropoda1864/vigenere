@@ -62,6 +62,7 @@ class Family(object):
         self.names_to_nodes = {}
         self.root = Member(founder)
         self.names_to_nodes[founder] = self.root
+        self.visited = None
         self.clock = None
         self.pre_order = None
         self.post_order = None
@@ -86,6 +87,29 @@ class Family(object):
             c_member.add_parent(mom_node)
             # set the parent's child
             mom_node.add_child(c_member)
+
+    def run_dfs(self):
+        self.visited = []
+        self.clock = 1
+        self.pre_order = {}
+        self.post_order = {}
+        self.depth_first_search(self.root)
+
+    def depth_first_search(self, node):
+        self.visited.append(node)
+        self.pre_visit(node)
+        for child in node.children:
+            if child.name not in self.visited:
+                self.depth_first_search(child)
+        self.post_visit(node)
+
+    def pre_visit(self, node):
+        self.pre_order[node.name] = self.clock
+        self.clock += 1
+
+    def post_visit(self, node):
+        self.post_order[node.name] = self.clock
+        self.clock += 1
 
     def cousin(self, a, b):
         """
@@ -113,19 +137,15 @@ class Family(object):
         self.run_dfs()
         cousin = -1
         degree = 0
-        # same person
-        if self.pre_order[a] == self.pre_order[b]:
+        if self.pre_order[a] == self.pre_order[b]:           # same person
             pass
-        # a is descendant of b
         elif (    self.pre_order[a]  > self.pre_order[b]
-              and self.post_order[a] < self.post_order[b]):
+              and self.post_order[a] < self.post_order[b]):  # a is descendant of b
             degree = self.distance_to_ancestor(a, b)
-        # b is descendant of a
         elif (    self.pre_order[a]  < self.pre_order[b]
-              and self.post_order[a] > self.post_order[b]):
+              and self.post_order[a] > self.post_order[b]):  # b is descendant of a
             degree = self.distance_to_ancestor(b, a)
-        # a and b have common ancestor
-        else:
+        else:                                                # a and b have common ancestor
             cousin, degree = self.get_cousin_and_degree(a, b)
         return cousin, degree
 
@@ -165,29 +185,6 @@ class Family(object):
             return person
         else:
             return self.get_nth_parent(person.parent.name, n - 1)
-
-    def run_dfs(self):
-        self.clock = 1
-        self.pre_order = {}
-        self.post_order = {}
-        self.depth_first_search(self.root)
-
-    def depth_first_search(self, node):
-        visited = [node.name]
-        self.pre_visit(node)
-        for child in node.children:
-            if child.name not in visited:
-                self.depth_first_search(child)
-        self.post_visit(node)
-
-    def pre_visit(self, node):
-        self.pre_order[node.name] = self.clock
-        self.clock += 1
-
-    def post_visit(self, node):
-        self.post_order[node.name] = self.clock
-        self.clock += 1
-
 
 f = Family("a")
 f.set_children("a", ["b", "c"])
