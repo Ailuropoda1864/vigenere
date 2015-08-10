@@ -89,17 +89,17 @@ class Family(object):
             mom_node.add_child(c_member)
 
     def run_dfs(self):
-        self.visited = []
+        self.visited = dict(zip(self.names_to_nodes.keys(), [False for i in range(len(self.names_to_nodes))]))
         self.clock = 1
         self.pre_order = {}
         self.post_order = {}
         self.depth_first_search(self.root)
 
     def depth_first_search(self, node):
-        self.visited.append(node)
+        self.visited[node.name] = True
         self.pre_visit(node)
         for child in node.children:
-            if child.name not in self.visited:
+            if not self.visited[child.name]:
                 self.depth_first_search(child)
         self.post_visit(node)
 
