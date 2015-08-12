@@ -62,6 +62,8 @@ class Family(object):
         self.names_to_nodes = {}
         self.root = Member(founder)
         self.names_to_nodes[founder] = self.root
+        # DFS variables
+        self.dfs_state = None
         self.visited = None
         self.clock = None
         self.pre_order = None
@@ -87,13 +89,18 @@ class Family(object):
             c_member.add_parent(mom_node)
             # set the parent's child
             mom_node.add_child(c_member)
+        # tree has changed, so DFS needs to be run
+        self.dfs_state = False
 
     def run_dfs(self):
-        self.visited = dict(zip(self.names_to_nodes.keys(), [False for i in range(len(self.names_to_nodes))]))
-        self.clock = 1
-        self.pre_order = {}
-        self.post_order = {}
-        self.depth_first_search(self.root)
+        # only do DFS if the tree has changed
+        if not self.dfs_state:
+            self.visited = dict(zip(self.names_to_nodes.keys(), [False for i in range(len(self.names_to_nodes))]))
+            self.clock = 1
+            self.pre_order = {}
+            self.post_order = {}
+            self.depth_first_search(self.root)
+            self.dfs_state = True
 
     def depth_first_search(self, node):
         self.visited[node.name] = True
@@ -137,29 +144,37 @@ class Family(object):
         self.run_dfs()
         cousin = -1
         degree = 0
-        if self.pre_order[a] == self.pre_order[b]:           # same person
+        if self.pre_order[a] == self.pre_order[b]:
             pass
-        elif (    self.pre_order[a]  > self.pre_order[b]
-              and self.post_order[a] < self.post_order[b]):  # a is descendant of b
-            degree = self.distance_to_ancestor(a, b)
-        elif (    self.pre_order[a]  < self.pre_order[b]
-              and self.post_order[a] > self.post_order[b]):  # b is descendant of a
-            degree = self.distance_to_ancestor(b, a)
-        else:                                                # a and b have common ancestor
+        elif self.are_direct_relatives(a, b):
+            degree = abs(self.distance_from_root(a) - self.distance_from_root(b))
+        else:
             cousin, degree = self.get_cousin_and_degree(a, b)
         return cousin, degree
 
-    def distance_to_ancestor(self, descendant_name, ancestor_name, distance=0):
+    def are_direct_relatives(self, person_1_name, person_2_name):
+        return (
+                   (self.pre_order[person_1_name] > self.pre_order[person_2_name]
+                and self.post_order[person_1_name] < self.post_order[person_2_name])
+            or     (self.pre_order[person_2_name] > self.pre_order[person_1_name]
+                and self.post_order[person_2_name] < self.post_order[person_1_name])
+        )
+
+    def distance_from_root(self, descendant_name, distance=0):
+        """
+        This function can be implemented using BFS instead of recursion.  BFS will calculate the distance of all the
+        nodes from the root node.  It's a good choice if your tree is static and you want to perform a lot of queries
+        on it, because you only need to run it once.
+        """
         descendant = self.names_to_nodes[descendant_name]
-        ancestor = self.names_to_nodes[ancestor_name]
-        if descendant == ancestor:
+        if descendant == self.root:
             return distance
         else:
-            return self.distance_to_ancestor(descendant.parent.name, ancestor_name, distance + 1)
+            return self.distance_from_root(descendant.parent.name, distance + 1)
 
     def get_cousin_and_degree(self, person_1_name, person_2_name):
-        generation_1 = self.distance_to_ancestor(person_1_name, self.root.name)
-        generation_2 = self.distance_to_ancestor(person_2_name, self.root.name)
+        generation_1 = self.distance_from_root(person_1_name)
+        generation_2 = self.distance_from_root(person_2_name)
         degree = abs(generation_1 - generation_2)
         if generation_1 > generation_2:
             person_1 = self.get_nth_parent(person_1_name, degree)
