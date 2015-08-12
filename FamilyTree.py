@@ -164,7 +164,8 @@ class Family(object):
         """
         This function can be implemented using BFS instead of recursion.  BFS will calculate the distance of all the
         nodes from the root node.  It's a good choice if your tree is static and you want to perform a lot of queries
-        on it, because you only need to run it once.
+        on it, because you only need to run it once.  After running BFS you should have a dictionary with names as
+        keys and distance from root as values, so this function would become a one-liner.
         """
         descendant = self.names_to_nodes[descendant_name]
         if descendant == self.root:
