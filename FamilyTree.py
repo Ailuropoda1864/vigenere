@@ -68,6 +68,10 @@ class Family(object):
         self.clock = None
         self.pre_order = None
         self.post_order = None
+        # BFS variables
+        self.bfs_state = None
+        self.bfs_visited = None
+        self.distance = None
 
     def set_children(self, mother, list_of_children):
         """
@@ -91,6 +95,8 @@ class Family(object):
             mom_node.add_child(c_member)
         # tree has changed, so DFS needs to be run
         self.dfs_state = False
+        # tree has changed, so BFS needs to be run
+        self.bfs_state = False
 
     def run_dfs(self):
         # only do DFS if the tree has changed
@@ -109,7 +115,7 @@ class Family(object):
             if not self.visited[child.name]:
                 self.depth_first_search(child)
         self.post_visit(node)
-
+                                      
     def pre_visit(self, node):
         self.pre_order[node.name] = self.clock
         self.clock += 1
@@ -117,6 +123,27 @@ class Family(object):
     def post_visit(self, node):
         self.post_order[node.name] = self.clock
         self.clock += 1
+        
+    def run_bfs(self):
+        if not self.bfs_state:
+            self.bfs_visited = dict(zip(self.names_to_nodes.keys(), [False for i in range(len(self.names_to_nodes))]))
+            self.breadth_first_search(self.root)
+            self.bfs_state = True
+                    
+    def breadth_first_search(self, node):        
+        queue = [node]
+        self.distance = {}  
+        while len(queue) > 0:
+            firstInQ = queue[0]
+            self.bfs_visited[firstInQ.name] = True
+            if firstInQ == self.root:
+                self.distance[firstInQ.name] = 0
+            else:
+                self.distance[firstInQ.name] = self.distance[firstInQ.parent.name] + 1
+            for child in firstInQ.children:
+                if not self.bfs_visited[child.name]:
+                    queue.append(child)           
+            queue.pop(0)
 
     def cousin(self, a, b):
         """
@@ -142,6 +169,7 @@ class Family(object):
         
         ## YOUR CODE HERE ####
         self.run_dfs()
+        self.run_bfs()
         cousin = -1
         degree = 0
         if self.pre_order[a] == self.pre_order[b]:
@@ -167,11 +195,7 @@ class Family(object):
         on it, because you only need to run it once.  After running BFS you should have a dictionary with names as
         keys and distance from root as values, so this function would become a one-liner.
         """
-        descendant = self.names_to_nodes[descendant_name]
-        if descendant == self.root:
-            return distance
-        else:
-            return self.distance_from_root(descendant.parent.name, distance + 1)
+        return self.distance[descendant_name]
 
     def get_cousin_and_degree(self, person_1_name, person_2_name):
         generation_1 = self.distance_from_root(person_1_name)
